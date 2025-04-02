@@ -28,6 +28,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { useState } from "react";
 
 const phoneRegex = /^\(\d{2}\) \d{5}-\d{4}$/;
 
@@ -66,6 +67,28 @@ export function StudentForm({ open, onOpenChange, onSubmit }: StudentFormProps) 
     onOpenChange(false);
   }
 
+  const formatPhoneNumber = (value: string) => {
+    // Remove todos os caracteres não numéricos
+    const numbers = value.replace(/\D/g, '');
+    
+    // Se não tiver números, retorne string vazia
+    if (numbers.length === 0) return '';
+    
+    // Formato: (XX) XXXXX-XXXX
+    if (numbers.length <= 2) {
+      return `(${numbers}`;
+    } else if (numbers.length <= 7) {
+      return `(${numbers.slice(0, 2)}) ${numbers.slice(2)}`;
+    } else {
+      return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 7)}-${numbers.slice(7, 11)}`;
+    }
+  };
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>, onChange: (value: string) => void) => {
+    const formattedValue = formatPhoneNumber(e.target.value);
+    onChange(formattedValue);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
@@ -93,11 +116,15 @@ export function StudentForm({ open, onOpenChange, onSubmit }: StudentFormProps) 
             <FormField
               control={form.control}
               name="phone"
-              render={({ field }) => (
+              render={({ field: { onChange, ...rest } }) => (
                 <FormItem>
                   <FormLabel>Telefone</FormLabel>
                   <FormControl>
-                    <Input placeholder="(XX) XXXXX-XXXX" {...field} />
+                    <Input 
+                      placeholder="(XX) XXXXX-XXXX" 
+                      onChange={(e) => handlePhoneChange(e, onChange)}
+                      {...rest} 
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
