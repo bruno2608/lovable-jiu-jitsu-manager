@@ -62,7 +62,7 @@ export function AppSidebar() {
           <span className="font-bold text-sidebar-foreground">Jiu-Jitsu Manager</span>
         </div>
         <div className="mt-4 px-2">
-          <SidebarTrigger asChild>
+          <SidebarTrigger>
             <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0 text-sidebar-foreground opacity-50">
               <Menu className="h-6 w-6" />
             </Button>
