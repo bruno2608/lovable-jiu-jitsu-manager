@@ -21,8 +21,8 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarTrigger,
+  useSidebar,
 } from "@/components/ui/sidebar";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
 
 // Menu items for navigation
@@ -50,8 +50,6 @@ const mainMenuItems = [
 ];
 
 export function AppSidebar() {
-  const isMobile = useIsMobile();
-  
   return (
     <Sidebar>
       <SidebarHeader className="py-4 border-b border-sidebar-border">
