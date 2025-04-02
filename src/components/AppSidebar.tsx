@@ -6,7 +6,11 @@ import {
   Award,
   Settings,
   Menu,
-  LogIn
+  LogIn,
+  Mail,
+  Building,
+  Tag,
+  FileText
 } from "lucide-react";
 
 import {
@@ -46,26 +50,53 @@ const mainMenuItems = [
     title: "Graduações",
     url: "/graduacoes",
     icon: Award,
+  },
+  {
+    title: "Mensagens",
+    url: "/mensagens",
+    icon: Mail,
+  },
+  {
+    title: "Instituição",
+    url: "/instituicao",
+    icon: Building,
+  },
+  {
+    title: "Promoções",
+    url: "/promocoes",
+    icon: Tag,
+  },
+  {
+    title: "Relatórios",
+    url: "/relatorios",
+    icon: FileText,
   }
 ];
 
 export function AppSidebar() {
+  const { state } = useSidebar();
+  const isCollapsed = state === "collapsed";
+
   return (
     <Sidebar>
-      <SidebarHeader className="py-4 border-b border-sidebar-border">
-        <div className="px-6 flex items-center gap-2">
+      <SidebarHeader className={`py-4 border-b border-sidebar-border ${isCollapsed ? 'px-2' : 'px-6'}`}>
+        <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-2'}`}>
           <div className="h-8 w-8 rounded-full bg-sidebar-primary flex items-center justify-center">
             <span className="font-bold text-sidebar-primary-foreground">JJ</span>
           </div>
-          <span className="font-bold text-sidebar-foreground">Jiu-Jitsu Manager</span>
+          {!isCollapsed && (
+            <span className="font-bold text-sidebar-foreground">Jiu-Jitsu Manager</span>
+          )}
         </div>
-        <div className="mt-4 px-2">
-          <SidebarTrigger>
-            <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0 text-sidebar-foreground opacity-50">
-              <Menu className="h-6 w-6" />
-            </Button>
-          </SidebarTrigger>
-        </div>
+        {!isCollapsed && (
+          <div className="mt-4 px-2">
+            <SidebarTrigger>
+              <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0 text-sidebar-foreground opacity-50">
+                <Menu className="h-6 w-6" />
+              </Button>
+            </SidebarTrigger>
+          </div>
+        )}
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
@@ -73,10 +104,10 @@ export function AppSidebar() {
             <SidebarMenu>
               {mainMenuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <a href={item.url} className="flex items-center gap-3">
+                  <SidebarMenuButton asChild tooltip={item.title}>
+                    <a href={item.url} className="flex items-center gap-3 justify-center">
                       <item.icon className="h-5 w-5" />
-                      <span>{item.title}</span>
+                      {!isCollapsed && <span>{item.title}</span>}
                     </a>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -84,27 +115,33 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-        <SidebarGroup>
-          <SidebarGroupLabel>Configurações</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <a href="/configuracoes" className="flex items-center gap-3">
-                    <Settings className="h-5 w-5" />
-                    <span>Configurações</span>
-                  </a>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {!isCollapsed && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Configurações</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <a href="/configuracoes" className="flex items-center gap-3">
+                      <Settings className="h-5 w-5" />
+                      <span>Configurações</span>
+                    </a>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
-      <SidebarFooter className="py-4 border-t border-sidebar-border">
-        <div className="px-3">
-          <Button variant="outline" size="sm" className="w-full justify-start">
-            <LogIn className="mr-2 h-4 w-4" />
-            Conectar Supabase
+      <SidebarFooter className={`py-4 border-t border-sidebar-border ${isCollapsed ? 'px-2' : 'px-3'}`}>
+        <div>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className={`${isCollapsed ? 'w-10 p-0 flex justify-center' : 'w-full justify-start'}`}
+          >
+            <LogIn className={`${isCollapsed ? '' : 'mr-2'} h-4 w-4`} />
+            {!isCollapsed && 'Conectar Supabase'}
           </Button>
         </div>
       </SidebarFooter>
