@@ -5,49 +5,11 @@ import AppLayout from "@/components/AppLayout";
 import { StatCard } from "@/components/dashboard/StatCard"; 
 import { AttendanceChart } from "@/components/dashboard/AttendanceChart";
 import { RecentStudents } from "@/components/dashboard/RecentStudents";
-import { StudentProps } from "@/components/students/StudentCard";
 import { Button } from "@/components/ui/button";
 import { StudentForm } from "@/components/students/StudentForm";
 import { EmptyStateCard } from "@/components/EmptyStateCard";
-
-// Example data
-const mockStudents: StudentProps[] = [
-  {
-    id: "1",
-    name: "João Silva",
-    phone: "(11) 98765-4321",
-    belt: "Azul",
-    joinDate: "2023-01-15",
-  },
-  {
-    id: "2", 
-    name: "Maria Oliveira",
-    phone: "(11) 91234-5678",
-    belt: "Roxa",
-    joinDate: "2022-05-20",
-  },
-  {
-    id: "3",
-    name: "Carlos Santos",
-    phone: "(21) 99876-5432",
-    belt: "Branca",
-    joinDate: "2023-09-10",
-  },
-  {
-    id: "4",
-    name: "Ana Pereira",
-    phone: "(11) 95555-4444",
-    belt: "Preta",
-    joinDate: "2019-03-22",
-  },
-  {
-    id: "5",
-    name: "Lucas Mendes",
-    phone: "(21) 94444-3333",
-    belt: "Marrom",
-    joinDate: "2020-11-05",
-  }
-];
+import { useStudents, useAddStudent } from "@/hooks/useStudents";
+import { useStats } from "@/hooks/useStats";
 
 const attendanceData = [
   { name: "Seg", total: 18 },
@@ -61,19 +23,29 @@ const attendanceData = [
 
 const Index = () => {
   const [isNewStudentDialogOpen, setIsNewStudentDialogOpen] = useState(false);
-  const [students, setStudents] = useState<StudentProps[]>(mockStudents);
+  const { data: students = [], isLoading: studentsLoading } = useStudents();
+  const { data: stats, isLoading: statsLoading } = useStats();
+  const addStudentMutation = useAddStudent();
 
   const handleAddStudent = (data: any) => {
-    const newStudent: StudentProps = {
-      id: (students.length + 1).toString(),
-      name: data.name,
-      phone: data.phone,
-      belt: data.belt,
-      joinDate: new Date().toISOString().split('T')[0],
-    };
-
-    setStudents([...students, newStudent]);
+    addStudentMutation.mutate({
+      nome: data.name,
+      email: data.email || `${data.name.toLowerCase().replace(/\s+/g, '.')}@exemplo.com`,
+      telefone: data.phone,
+      faixa: data.belt,
+    });
+    setIsNewStudentDialogOpen(false);
   };
+
+  // Transform students data for components
+  const transformedStudents = students.map(student => ({
+    id: student.id,
+    name: student.nome,
+    phone: student.telefone || "",
+    belt: (student.alunos?.faixa || "Branca") as "Branca" | "Azul" | "Roxa" | "Marrom" | "Preta" | "Coral",
+    joinDate: student.alunos?.data_inicio || student.created_at,
+    photoUrl: student.foto_url,
+  }));
 
   return (
     <AppLayout>
@@ -93,27 +65,27 @@ const Index = () => {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard 
           title="Alunos Ativos" 
-          value={students.length}
+          value={statsLoading ? "..." : stats?.totalStudents || 0}
           description="Total de alunos matriculados"
           icon={Users}
           trend={{ value: 12, isPositive: true }}
         />
         <StatCard 
           title="Aulas Esta Semana" 
-          value="15" 
+          value={statsLoading ? "..." : stats?.totalClasses || 0}
           description="Total de aulas programadas"
           icon={CalendarDays}
         />
         <StatCard 
           title="Taxa de Presença" 
-          value="78%" 
+          value={statsLoading ? "..." : stats?.attendanceRate || "0%"}
           description="Média da semana"
           icon={Users}
           trend={{ value: 5, isPositive: true }}
         />
         <StatCard 
           title="Próxima Graduação" 
-          value="18 dias" 
+          value={statsLoading ? "..." : stats?.nextGraduation || "N/A"}
           description="Até o exame de faixa"
           icon={Award}
         />
@@ -121,14 +93,14 @@ const Index = () => {
 
       <div className="grid gap-4 mt-6 md:grid-cols-2 lg:grid-cols-7">
         <AttendanceChart data={attendanceData} />
-        {students.length > 0 ? (
-          <RecentStudents students={students} />
+        {!studentsLoading && transformedStudents.length > 0 ? (
+          <RecentStudents students={transformedStudents} />
         ) : (
           <div className="col-span-4 md:col-span-2">
             <EmptyStateCard
               icon={Users}
-              title="Sem alunos"
-              description="Você ainda não tem alunos cadastrados em sua academia."
+              title={studentsLoading ? "Carregando..." : "Sem alunos"}
+              description={studentsLoading ? "Buscando alunos..." : "Você ainda não tem alunos cadastrados em sua academia."}
               actionLabel="Adicionar aluno"
               onAction={() => setIsNewStudentDialogOpen(true)}
             />

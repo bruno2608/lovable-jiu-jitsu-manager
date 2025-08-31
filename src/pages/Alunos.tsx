@@ -3,65 +3,35 @@ import { useState } from "react";
 import AppLayout from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { StudentList } from "@/components/students/StudentList";
-import { StudentProps } from "@/components/students/StudentCard";
 import { StudentForm } from "@/components/students/StudentForm";
 import { UserRoundPlus, Users } from "lucide-react";
 import { EmptyStateCard } from "@/components/EmptyStateCard";
-
-// Mock students data
-const mockStudents: StudentProps[] = [
-  {
-    id: "1",
-    name: "João Silva",
-    phone: "(11) 98765-4321",
-    belt: "Azul",
-    joinDate: "2023-01-15",
-  },
-  {
-    id: "2", 
-    name: "Maria Oliveira",
-    phone: "(11) 91234-5678",
-    belt: "Roxa",
-    joinDate: "2022-05-20",
-  },
-  {
-    id: "3",
-    name: "Carlos Santos",
-    phone: "(21) 99876-5432",
-    belt: "Branca",
-    joinDate: "2023-09-10",
-  },
-  {
-    id: "4",
-    name: "Ana Pereira",
-    phone: "(11) 95555-4444",
-    belt: "Preta",
-    joinDate: "2019-03-22",
-  },
-  {
-    id: "5",
-    name: "Lucas Mendes",
-    phone: "(21) 94444-3333",
-    belt: "Marrom",
-    joinDate: "2020-11-05",
-  }
-];
+import { useStudents, useAddStudent } from "@/hooks/useStudents";
 
 const AlunosPage = () => {
-  const [students, setStudents] = useState<StudentProps[]>(mockStudents);
   const [isNewStudentDialogOpen, setIsNewStudentDialogOpen] = useState(false);
+  const { data: students = [], isLoading } = useStudents();
+  const addStudentMutation = useAddStudent();
 
   const handleAddStudent = (data: any) => {
-    const newStudent: StudentProps = {
-      id: (students.length + 1).toString(),
-      name: data.name,
-      phone: data.phone,
-      belt: data.belt,
-      joinDate: new Date().toISOString().split('T')[0],
-    };
-
-    setStudents([...students, newStudent]);
+    addStudentMutation.mutate({
+      nome: data.name,
+      email: data.email || `${data.name.toLowerCase().replace(/\s+/g, '.')}@exemplo.com`,
+      telefone: data.phone,
+      faixa: data.belt,
+    });
+    setIsNewStudentDialogOpen(false);
   };
+
+  // Transform students data for components
+  const transformedStudents = students.map(student => ({
+    id: student.id,
+    name: student.nome,
+    phone: student.telefone || "",
+    belt: (student.alunos?.faixa || "Branca") as "Branca" | "Azul" | "Roxa" | "Marrom" | "Preta" | "Coral",
+    joinDate: student.alunos?.data_inicio || student.created_at,
+    photoUrl: student.foto_url,
+  }));
 
   return (
     <AppLayout>
@@ -78,13 +48,13 @@ const AlunosPage = () => {
         </Button>
       </div>
 
-      {students.length > 0 ? (
-        <StudentList students={students} />
+      {!isLoading && transformedStudents.length > 0 ? (
+        <StudentList students={transformedStudents} />
       ) : (
         <EmptyStateCard
           icon={Users}
-          title="Nenhum aluno cadastrado"
-          description="Você ainda não tem alunos cadastrados em sua academia."
+          title={isLoading ? "Carregando..." : "Nenhum aluno cadastrado"}
+          description={isLoading ? "Buscando alunos..." : "Você ainda não tem alunos cadastrados em sua academia."}
           actionLabel="Adicionar aluno"
           onAction={() => setIsNewStudentDialogOpen(true)}
         />

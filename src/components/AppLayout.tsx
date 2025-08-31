@@ -4,6 +4,7 @@ import { SidebarProvider, SidebarInset, SidebarTrigger, useSidebar } from "@/com
 import { AppSidebar } from "./AppSidebar";
 import { Button } from "@/components/ui/button";
 import { Menu } from "lucide-react";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -36,6 +37,9 @@ export function AppLayout({ children }: AppLayoutProps) {
         <AppSidebar />
         <main className="flex-1 overflow-y-auto">
           <FloatingSidebarToggle />
+          <div className="fixed top-4 right-4 z-50">
+            <ThemeToggle />
+          </div>
           <div className="container py-6 px-4 md:px-6">
             {children}
           </div>
