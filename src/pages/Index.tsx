@@ -10,21 +10,13 @@ import { StudentForm } from "@/components/students/StudentForm";
 import { EmptyStateCard } from "@/components/EmptyStateCard";
 import { useStudents, useAddStudent } from "@/hooks/useStudents";
 import { useStats } from "@/hooks/useStats";
-
-const attendanceData = [
-  { name: "Seg", total: 18 },
-  { name: "Ter", total: 22 },
-  { name: "Qua", total: 15 },
-  { name: "Qui", total: 24 },
-  { name: "Sex", total: 20 },
-  { name: "Sáb", total: 14 },
-  { name: "Dom", total: 0 },
-];
+import { useWeeklyAttendance } from "@/hooks/useAulas";
 
 const Index = () => {
   const [isNewStudentDialogOpen, setIsNewStudentDialogOpen] = useState(false);
   const { data: students = [], isLoading: studentsLoading } = useStudents();
   const { data: stats, isLoading: statsLoading } = useStats();
+  const { data: attendanceData = [], isLoading: attendanceLoading } = useWeeklyAttendance();
   const addStudentMutation = useAddStudent();
 
   const handleAddStudent = (data: any) => {
@@ -97,7 +89,7 @@ const Index = () => {
       </div>
 
       <div className="grid gap-4 mt-6 md:grid-cols-2 lg:grid-cols-7">
-        <AttendanceChart data={attendanceData} />
+        <AttendanceChart data={attendanceLoading ? [] : attendanceData} />
         {!studentsLoading && transformedStudents.length > 0 ? (
           <RecentStudents students={transformedStudents} />
         ) : (

@@ -7,13 +7,17 @@ import { CalendarDays, Phone } from "lucide-react";
 export interface StudentProps {
   id: string;
   name: string;
+  email?: string;
   phone?: string;
   belt: "Branca" | "Azul" | "Roxa" | "Marrom" | "Preta" | "Coral";
   joinDate: string;
   photoUrl?: string;
+  active?: boolean;
+  matricula?: number;
+  matriculaDate?: string;
 }
 
-export function StudentCard({ name, phone, belt, joinDate, photoUrl }: StudentProps) {
+export function StudentCard({ name, email, phone, belt, joinDate, photoUrl, active, matricula }: StudentProps) {
   const getBeltClass = (belt: string) => {
     switch (belt) {
       case "Branca": return "belt-white";
@@ -35,7 +39,7 @@ export function StudentCard({ name, phone, belt, joinDate, photoUrl }: StudentPr
   };
 
   return (
-    <Card className="overflow-hidden transition-all hover:shadow-md">
+    <Card className={`overflow-hidden transition-all hover:shadow-md ${active === false ? 'opacity-60' : ''}`}>
       <CardHeader className="p-0">
         <div className={`h-2 ${getBeltClass(belt)}`}></div>
       </CardHeader>
@@ -46,9 +50,20 @@ export function StudentCard({ name, phone, belt, joinDate, photoUrl }: StudentPr
             <AvatarFallback>{getInitials(name)}</AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
-            <p className="font-medium truncate">{name}</p>
+            <div className="flex items-center gap-2">
+              <p className="font-medium truncate">{name}</p>
+              {active === false && (
+                <Badge variant="secondary" className="text-xs">Inativo</Badge>
+              )}
+              {matricula && (
+                <Badge variant="outline" className="text-xs">#{matricula}</Badge>
+              )}
+            </div>
+            {email && (
+              <p className="text-sm text-muted-foreground truncate">{email}</p>
+            )}
             {phone && (
-              <div className="flex items-center text-sm text-muted-foreground">
+              <div className="flex items-center text-sm text-muted-foreground mt-1">
                 <Phone className="mr-1 h-3 w-3" />
                 {phone}
               </div>

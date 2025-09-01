@@ -2,6 +2,8 @@
 import { useState } from "react";
 import AppLayout from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { StudentList } from "@/components/students/StudentList";
 import { StudentForm } from "@/components/students/StudentForm";
 import { UserRoundPlus, Users } from "lucide-react";
@@ -10,7 +12,9 @@ import { useStudents, useAddStudent } from "@/hooks/useStudents";
 
 const AlunosPage = () => {
   const [isNewStudentDialogOpen, setIsNewStudentDialogOpen] = useState(false);
-  const { data: students = [], isLoading } = useStudents();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const { data: students = [], isLoading } = useStudents(searchTerm, statusFilter === "all" ? undefined : statusFilter);
   const addStudentMutation = useAddStudent();
 
   const handleAddStudent = (data: any) => {
@@ -27,10 +31,14 @@ const AlunosPage = () => {
   const transformedStudents = students.map(student => ({
     id: student.id,
     name: student.nome,
+    email: student.email,
     phone: student.telefone || "",
     belt: (student.alunos?.faixa || "Branca") as "Branca" | "Azul" | "Roxa" | "Marrom" | "Preta" | "Coral",
     joinDate: student.alunos?.data_inicio || student.created_at,
     photoUrl: student.foto_url,
+    active: student.ativo,
+    matricula: student.matriculas?.[0]?.numero || 0,
+    matriculaDate: student.matriculas?.[0]?.created_at || student.created_at,
   }));
 
   return (
@@ -48,13 +56,34 @@ const AlunosPage = () => {
         </Button>
       </div>
 
+      <div className="flex flex-col sm:flex-row gap-4 mb-6">
+        <div className="relative flex-1">
+          <Input
+            type="search"
+            placeholder="Buscar por nome ou e-mail..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-full sm:w-[200px]">
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos</SelectItem>
+            <SelectItem value="ativo">Ativos</SelectItem>
+            <SelectItem value="inativo">Inativos</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
       {!isLoading && transformedStudents.length > 0 ? (
         <StudentList students={transformedStudents} />
       ) : (
         <EmptyStateCard
           icon={Users}
-          title={isLoading ? "Carregando..." : "Nenhum aluno cadastrado"}
-          description={isLoading ? "Buscando alunos..." : "Você ainda não tem alunos cadastrados em sua academia."}
+          title={isLoading ? "Carregando..." : searchTerm || statusFilter !== "all" ? "Nenhum aluno encontrado" : "Nenhum aluno cadastrado"}
+          description={isLoading ? "Buscando alunos..." : searchTerm || statusFilter !== "all" ? "Tente ajustar os filtros de busca." : "Você ainda não tem alunos cadastrados em sua academia."}
           actionLabel="Adicionar aluno"
           onAction={() => setIsNewStudentDialogOpen(true)}
         />

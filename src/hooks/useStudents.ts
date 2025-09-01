@@ -10,26 +10,51 @@ export interface Student {
   foto_url?: string;
   data_nascimento?: string;
   created_at: string;
+  ativo: boolean;
   alunos?: {
     faixa: string;
     data_inicio: string;
   };
+  matriculas?: {
+    numero: number;
+    created_at: string;
+    status: string;
+  }[];
 }
 
-export const useStudents = () => {
+export const useStudents = (searchTerm?: string, statusFilter?: string) => {
   return useQuery({
-    queryKey: ["students"],
+    queryKey: ["students", searchTerm, statusFilter],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from("usuarios")
         .select(`
           *,
           alunos (
             faixa,
             data_inicio
+          ),
+          matriculas (
+            numero,
+            created_at,
+            status
           )
         `)
-        .not("alunos", "is", null);
+        .not("matriculas", "is", null);
+
+      // Apply search filter
+      if (searchTerm && searchTerm.trim()) {
+        query = query.or(`nome.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`);
+      }
+
+      // Apply status filter
+      if (statusFilter === "ativo") {
+        query = query.eq("ativo", true);
+      } else if (statusFilter === "inativo") {
+        query = query.eq("ativo", false);
+      }
+
+      const { data, error } = await query.order("created_at", { ascending: false });
 
       if (error) {
         console.error("Error fetching students:", error);

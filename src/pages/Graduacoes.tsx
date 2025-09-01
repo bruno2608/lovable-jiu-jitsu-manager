@@ -1,23 +1,32 @@
-
 import AppLayout from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CalendarDays, Plus, Clock, User } from "lucide-react";
+import { Award, Plus, Calendar, User } from "lucide-react";
 import { EmptyStateCard } from "@/components/EmptyStateCard";
-import { useAulas } from "@/hooks/useAulas";
+import { useUpcomingGraduacoes } from "@/hooks/useGraduacoes";
 
-const AulasPage = () => {
-  const { data: aulas = [], isLoading } = useAulas();
+const GraduacoesPage = () => {
+  const { data: graduacoes = [], isLoading } = useUpcomingGraduacoes();
 
-  const getDayName = (dayNumber: number) => {
-    const days = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
-    return days[dayNumber] || "N/A";
+  const getStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case "confirmada":
+      case "aprovada":
+        return "default";
+      case "pendente":
+        return "secondary";
+      case "rejeitada":
+      case "cancelada":
+        return "destructive";
+      default:
+        return "secondary";
+    }
   };
 
-  const formatTime = (time: string) => {
-    return time.substring(0, 5); // Remove seconds from HH:MM:SS
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('pt-BR');
   };
 
   if (isLoading) {
@@ -25,14 +34,14 @@ const AulasPage = () => {
       <AppLayout>
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Aulas</h1>
+            <h1 className="text-3xl font-bold tracking-tight">Graduações</h1>
             <p className="text-muted-foreground">
-              Gerencie as aulas e controle a presença dos alunos.
+              Acompanhe as próximas graduações e cerimônias de faixa.
             </p>
           </div>
           <Button>
             <Plus className="mr-2 h-4 w-4" />
-            Nova Aula
+            Nova Graduação
           </Button>
         </div>
 
@@ -58,48 +67,54 @@ const AulasPage = () => {
     <AppLayout>
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Aulas</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Graduações</h1>
           <p className="text-muted-foreground">
-            Gerencie as aulas e controle a presença dos alunos.
+            Acompanhe as próximas graduações e cerimônias de faixa.
           </p>
         </div>
         <Button>
           <Plus className="mr-2 h-4 w-4" />
-          Nova Aula
+          Nova Graduação
         </Button>
       </div>
 
-      {aulas.length > 0 ? (
+      {graduacoes.length > 0 ? (
         <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-          {aulas.map((aula) => (
-            <Card key={aula.id}>
+          {graduacoes.map((graduacao) => (
+            <Card key={graduacao.id}>
               <CardHeader>
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg">{aula.nome}</CardTitle>
-                  <Badge variant={aula.ativa ? "default" : "secondary"}>
-                    {aula.ativa ? "Ativa" : "Inativa"}
+                  <CardTitle className="text-lg">
+                    {graduacao.usuarios?.nome || "Nome não informado"}
+                  </CardTitle>
+                  <Badge variant={getStatusColor(graduacao.status)}>
+                    {graduacao.status}
                   </Badge>
                 </div>
-                <p className="text-sm text-muted-foreground">{aula.tipo}</p>
+                <p className="text-sm text-muted-foreground">
+                  {graduacao.usuarios?.email}
+                </p>
               </CardHeader>
               <CardContent className="space-y-2">
                 <div className="flex items-center gap-2 text-sm">
-                  <CalendarDays className="h-4 w-4" />
-                  <span>{getDayName(aula.dia_semana)}</span>
+                  <Calendar className="h-4 w-4" />
+                  <span>Data: {formatDate(graduacao.data_graduacao)}</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm">
-                  <Clock className="h-4 w-4" />
-                  <span>{formatTime(aula.horario_inicio)} - {formatTime(aula.horario_fim)}</span>
+                  <Award className="h-4 w-4" />
+                  <span>
+                    Grau {graduacao.grau_anterior || 0} → {graduacao.grau_novo}
+                  </span>
                 </div>
-                {aula.usuarios && (
+                {graduacao.professor && (
                   <div className="flex items-center gap-2 text-sm">
                     <User className="h-4 w-4" />
-                    <span>Instrutor: {aula.usuarios.nome}</span>
+                    <span>Professor: {graduacao.professor.nome}</span>
                   </div>
                 )}
-                {aula.turmas && (
+                {graduacao.observacoes && (
                   <div className="text-sm text-muted-foreground">
-                    Turma: {aula.turmas.nome}
+                    <strong>Observações:</strong> {graduacao.observacoes}
                   </div>
                 )}
               </CardContent>
@@ -108,15 +123,15 @@ const AulasPage = () => {
         </div>
       ) : (
         <EmptyStateCard
-          icon={CalendarDays}
-          title="Nenhuma aula cadastrada"
-          description="Você ainda não tem aulas cadastradas. Adicione uma nova aula para começar."
-          actionLabel="Adicionar aula"
-          onAction={() => alert("Funcionalidade de adicionar aula será implementada na versão 0.2")}
+          icon={Award}
+          title="Nenhuma graduação programada"
+          description="Não há graduações programadas para os próximos dias."
+          actionLabel="Programar graduação"
+          onAction={() => alert("Funcionalidade de programar graduação será implementada na versão 0.2")}
         />
       )}
     </AppLayout>
   );
 };
 
-export default AulasPage;
+export default GraduacoesPage;
