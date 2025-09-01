@@ -56,10 +56,15 @@ const Index = () => {
             Bem-vindo ao seu gerenciador de academia de Jiu-Jitsu.
           </p>
         </div>
-        <Button onClick={() => setIsNewStudentDialogOpen(true)}>
-          <UserRoundPlus className="mr-2 h-4 w-4" />
-          Novo Aluno
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={() => setIsNewStudentDialogOpen(true)}>
+            <UserRoundPlus className="mr-2 h-4 w-4" />
+            Novo Aluno
+          </Button>
+          <Button variant="outline" onClick={() => window.location.href = '/cadastro'}>
+            Cadastrar Usuário
+          </Button>
+        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
