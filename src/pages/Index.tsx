@@ -33,8 +33,11 @@ const Index = () => {
   const transformedStudents = students.map(student => ({
     id: student.id,
     name: student.nome,
+    email: student.email,
     phone: student.telefone || "",
-    belt: (student.alunos?.faixa || "Branca") as "Branca" | "Azul" | "Roxa" | "Marrom" | "Preta" | "Coral",
+    belt: student.faixa_key || "branca",
+    beltLabel: student.faixa_label,
+    beltColor: student.faixa_color,
     joinDate: student.alunos?.data_inicio || student.created_at,
     photoUrl: student.foto_url,
   }));

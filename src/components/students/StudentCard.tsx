@@ -9,7 +9,9 @@ export interface StudentProps {
   name: string;
   email?: string;
   phone?: string;
-  belt: "Branca" | "Azul" | "Roxa" | "Marrom" | "Preta" | "Coral";
+  belt: string;
+  beltLabel?: string;
+  beltColor?: string;
   joinDate: string;
   photoUrl?: string;
   active?: boolean;
@@ -17,16 +19,20 @@ export interface StudentProps {
   matriculaDate?: string;
 }
 
-export function StudentCard({ name, email, phone, belt, joinDate, photoUrl, active, matricula }: StudentProps) {
-  const getBeltClass = (belt: string) => {
-    switch (belt) {
-      case "Branca": return "belt-white";
-      case "Azul": return "belt-blue";
-      case "Roxa": return "belt-purple";
-      case "Marrom": return "belt-brown";
-      case "Preta": return "belt-black";
-      case "Coral": return "belt-coral";
-      default: return "belt-white";
+export function StudentCard({ name, email, phone, belt, beltLabel, beltColor, joinDate, photoUrl, active, matricula }: StudentProps) {
+  const getBeltClass = (beltColor?: string) => {
+    if (beltColor) {
+      return beltColor === '#ffffff' ? 'bg-white border border-gray-300' : `bg-[${beltColor}]`;
+    }
+    // Fallback
+    switch (belt?.toLowerCase()) {
+      case "branca": return "bg-white border border-gray-300";
+      case "azul": return "bg-blue-500";
+      case "roxa": return "bg-purple-500";
+      case "marrom": return "bg-amber-800";
+      case "preta": return "bg-black";
+      case "coral": return "bg-orange-400";
+      default: return "bg-white border border-gray-300";
     }
   };
 
@@ -41,7 +47,7 @@ export function StudentCard({ name, email, phone, belt, joinDate, photoUrl, acti
   return (
     <Card className={`overflow-hidden transition-all hover:shadow-md ${active === false ? 'opacity-60' : ''}`}>
       <CardHeader className="p-0">
-        <div className={`h-2 ${getBeltClass(belt)}`}></div>
+        <div className={`h-2 ${getBeltClass(beltColor)}`}></div>
       </CardHeader>
       <CardContent className="pt-4 pb-2">
         <div className="flex items-center gap-3">
@@ -69,8 +75,13 @@ export function StudentCard({ name, email, phone, belt, joinDate, photoUrl, acti
               </div>
             )}
           </div>
-          <Badge variant="outline" className={`${getBeltClass(belt)} text-xs ml-auto`}>
-            {belt}
+          <Badge 
+            variant="outline" 
+            className={`text-xs ml-auto ${getBeltClass(beltColor)} ${
+              beltColor === '#ffffff' || beltColor === '#ECC94B' ? 'text-black' : 'text-white'
+            }`}
+          >
+            {beltLabel || belt}
           </Badge>
         </div>
         <div className="mt-3 flex items-center text-xs text-muted-foreground">

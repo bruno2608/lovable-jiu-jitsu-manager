@@ -21,16 +21,11 @@ export function RecentStudents({ students }: RecentStudentsProps) {
     return name.substring(0, 2).toUpperCase();
   };
 
-  const getBeltClass = (belt: string) => {
-    switch (belt) {
-      case "Branca": return "belt-white";
-      case "Azul": return "belt-blue";
-      case "Roxa": return "belt-purple";
-      case "Marrom": return "belt-brown";
-      case "Preta": return "belt-black";
-      case "Coral": return "belt-coral";
-      default: return "belt-white";
+  const getBeltClass = (beltColor?: string) => {
+    if (beltColor) {
+      return beltColor === '#ffffff' ? 'bg-white border-2 border-gray-300' : `bg-[${beltColor}]`;
     }
+    return 'bg-white border-2 border-gray-300';
   };
 
   return (
@@ -46,13 +41,19 @@ export function RecentStudents({ students }: RecentStudentsProps) {
                 <AvatarImage src={student.photoUrl} />
                 <AvatarFallback>{getInitials(student.name)}</AvatarFallback>
               </Avatar>
-              <div className="ml-4 space-y-1">
-                <p className="text-sm font-medium leading-none">{student.name}</p>
-                <p className="text-sm text-muted-foreground">
-                  Desde {new Date(student.joinDate).toLocaleDateString('pt-BR')}
-                </p>
-              </div>
-              <div className={`ml-auto h-4 w-4 rounded-full ${getBeltClass(student.belt)}`} />
+               <div className="ml-4 space-y-1">
+                 <p className="text-sm font-medium leading-none">{student.name}</p>
+                 <div className="flex items-center gap-2">
+                   <p className="text-sm text-muted-foreground">
+                     Desde {new Date(student.joinDate).toLocaleDateString('pt-BR')}
+                   </p>
+                   <span className="text-xs text-muted-foreground">•</span>
+                   <span className="text-xs font-medium">
+                     {student.beltLabel || student.belt}
+                   </span>
+                 </div>
+               </div>
+               <div className={`ml-auto h-4 w-4 rounded-full ${getBeltClass(student.beltColor)}`} />
             </div>
           ))}
         </div>
