@@ -61,11 +61,17 @@ const Index = () => {
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard 
+          title="Novos Alunos Este Mês" 
+          value={statsLoading ? "..." : stats?.newStudentsThisMonth || 0}
+          description="Alunos cadastrados este mês"
+          icon={UserRoundPlus}
+          trend={{ value: 12, isPositive: true }}
+        />
+        <StatCard 
           title="Alunos Ativos" 
           value={statsLoading ? "..." : stats?.totalStudents || 0}
           description="Total de alunos matriculados"
           icon={Users}
-          trend={{ value: 12, isPositive: true }}
         />
         <StatCard 
           title="Aulas Esta Semana" 

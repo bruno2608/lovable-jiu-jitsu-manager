@@ -34,7 +34,7 @@ export const useStudents = (searchTerm?: string, statusFilter?: string) => {
             faixa,
             data_inicio
           ),
-          matriculas:aluno_id (
+          matriculas (
             numero,
             created_at,
             status,

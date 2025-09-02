@@ -11,6 +11,16 @@ export const useStats = () => {
         .select("*", { count: "exact", head: true })
         .eq("ativo", true);
 
+      // Get new students this month
+      const startOfMonth = new Date();
+      startOfMonth.setDate(1);
+      startOfMonth.setHours(0, 0, 0, 0);
+      
+      const { count: newStudentsThisMonth } = await supabase
+        .from("usuarios")
+        .select("*", { count: "exact", head: true })
+        .gte("created_at", startOfMonth.toISOString());
+
       // Get total classes this week
       const startOfWeek = new Date();
       startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
@@ -20,8 +30,7 @@ export const useStats = () => {
       const { count: totalClasses } = await supabase
         .from("aulas")
         .select("*", { count: "exact", head: true })
-        .gte("created_at", startOfWeek.toISOString())
-        .lte("created_at", endOfWeek.toISOString());
+        .eq("ativa", true);
 
       // Calculate attendance rate based on: presentes / (aulas_semana * alunos_ativos)
       let attendanceRate = "0%";
@@ -63,6 +72,7 @@ export const useStats = () => {
 
       return {
         totalStudents: totalStudents || 0,
+        newStudentsThisMonth: newStudentsThisMonth || 0,
         totalClasses: totalClasses || 0,
         attendanceRate,
         nextGraduation,
