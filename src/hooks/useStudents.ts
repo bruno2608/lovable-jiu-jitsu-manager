@@ -34,13 +34,13 @@ export const useStudents = (searchTerm?: string, statusFilter?: string) => {
             faixa,
             data_inicio
           ),
-          matriculas (
+          matriculas:aluno_id (
             numero,
             created_at,
-            status
+            status,
+            academia_id
           )
-        `)
-        .not("matriculas", "is", null);
+        `);
 
       // Apply search filter
       if (searchTerm && searchTerm.trim()) {
@@ -61,7 +61,12 @@ export const useStudents = (searchTerm?: string, statusFilter?: string) => {
         throw error;
       }
 
-      return data as Student[];
+      const raw = (data ?? []) as any[];
+      const normalized = raw.map((item) => ({
+        ...item,
+        matriculas: Array.isArray((item as any).matriculas) ? (item as any).matriculas : [],
+      }));
+      return normalized as Student[];
     },
   });
 };
