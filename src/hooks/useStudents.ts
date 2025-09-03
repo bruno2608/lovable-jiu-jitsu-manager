@@ -70,12 +70,12 @@ function resolveUserBelt(u: any, latestGradByUser: Map<string, any>) {
     beltKey = (u.graduacao_atual || u.faixa_atual).toString().toLowerCase();
   }
 
-  // 2) última graduação
-  if (!beltKey && latestGradByUser.size) {
+  // 2) última graduação da tabela graduacoes
+  if (!beltKey && latestGradByUser.size > 0) {
     const g = latestGradByUser.get(u.id);
     if (g) {
       beltKey = g.faixa?.toString().toLowerCase() || null;
-      grau = g.grau ?? null;
+      grau = g.grau_novo ?? g.grau ?? null;
     }
   }
 
@@ -85,11 +85,14 @@ function resolveUserBelt(u: any, latestGradByUser: Map<string, any>) {
   }
 
   // fallback final
-  beltKey = BELT_ORDER.includes(beltKey as any) ? beltKey : 'branca';
+  if (!beltKey || !BELT_ORDER.includes(beltKey as any)) {
+    beltKey = 'branca';
+    grau = grau || 0;
+  }
 
   return {
     beltKey,
-    grau,
+    grau: grau || 0,
     label: BELT_LABEL[beltKey] + (grau && grau > 0 ? ` • ${grau}º grau` : ''),
     color: BELT_COLOR[beltKey],
   };
@@ -153,9 +156,15 @@ export const useStudents = (searchTerm?: string, statusFilter?: string) => {
       // Criar mapa da graduação mais recente por usuário
       const latestGradByUser = new Map();
       graduacoes.forEach(g => {
-        if (!latestGradByUser.has(g.aluno_id)) {
+        const currentGrad = latestGradByUser.get(g.aluno_id);
+        if (!currentGrad) {
+          // Primeira graduação para este usuário
+          latestGradByUser.set(g.aluno_id, g);
+        } else {
           // Prioriza graduações ativas, senão pega a mais recente
-          if (g.status === 'ativa' || !latestGradByUser.get(g.aluno_id)) {
+          if (g.status === 'ativa' && currentGrad.status !== 'ativa') {
+            latestGradByUser.set(g.aluno_id, g);
+          } else if (g.status === currentGrad.status && new Date(g.data_graduacao) > new Date(currentGrad.data_graduacao)) {
             latestGradByUser.set(g.aluno_id, g);
           }
         }
