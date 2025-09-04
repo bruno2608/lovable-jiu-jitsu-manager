@@ -74,8 +74,8 @@ function resolveUserBelt(u: any, latestGradByUser: Map<string, any>) {
   if (!beltKey && latestGradByUser.size > 0) {
     const g = latestGradByUser.get(u.id);
     if (g) {
-      beltKey = (g.faixa_nova || g.faixa_anterior)?.toString().toLowerCase() || null;
-      grau = g.grau_novo ?? g.grau_anterior ?? null;
+      beltKey = g.faixa?.toString().toLowerCase() || null;
+      grau = g.grau ?? null;
     }
   }
 
@@ -144,17 +144,9 @@ export const useStudents = (searchTerm?: string, statusFilter?: string) => {
       if (userIds.length > 0) {
         const { data: gradData, error: gradError } = await supabase
           .from("graduacoes")
-          .select(`
-            aluno_id,
-            faixa_nova,
-            faixa_anterior,
-            grau_novo,
-            grau_anterior,
-            data_graduacao,
-            status
-          `)
+          .select("aluno_id, faixa, grau, data_graduacao, status, created_at")
           .in("aluno_id", userIds)
-          .order("data_graduacao", { ascending: false });
+          .order("created_at", { ascending: false });
         
         if (!gradError) {
           graduacoes = gradData ?? [];
@@ -172,7 +164,7 @@ export const useStudents = (searchTerm?: string, statusFilter?: string) => {
           // Prioriza graduações ativas (status = 'ativa'), senão pega a mais recente
           if (g.status === 'ativa' && currentGrad.status !== 'ativa') {
             latestGradByUser.set(g.aluno_id, g);
-          } else if (g.status === currentGrad.status && new Date(g.data_graduacao) > new Date(currentGrad.data_graduacao)) {
+          } else if (g.status === currentGrad.status && new Date(g.created_at) > new Date(currentGrad.created_at)) {
             latestGradByUser.set(g.aluno_id, g);
           }
         }
