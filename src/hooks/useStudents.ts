@@ -74,8 +74,8 @@ function resolveUserBelt(u: any, latestGradByUser: Map<string, any>) {
   if (!beltKey && latestGradByUser.size > 0) {
     const g = latestGradByUser.get(u.id);
     if (g) {
-      beltKey = g.faixa?.toString().toLowerCase() || null;
-      grau = g.grau_novo ?? g.grau ?? null;
+      beltKey = (g.faixa_nova || g.faixa_anterior)?.toString().toLowerCase() || null;
+      grau = g.grau_novo ?? g.grau_anterior ?? null;
     }
   }
 
@@ -144,7 +144,15 @@ export const useStudents = (searchTerm?: string, statusFilter?: string) => {
       if (userIds.length > 0) {
         const { data: gradData, error: gradError } = await supabase
           .from("graduacoes")
-          .select("*")
+          .select(`
+            aluno_id,
+            faixa_nova,
+            faixa_anterior,
+            grau_novo,
+            grau_anterior,
+            data_graduacao,
+            status
+          `)
           .in("aluno_id", userIds)
           .order("data_graduacao", { ascending: false });
         
@@ -161,7 +169,7 @@ export const useStudents = (searchTerm?: string, statusFilter?: string) => {
           // Primeira graduação para este usuário
           latestGradByUser.set(g.aluno_id, g);
         } else {
-          // Prioriza graduações ativas, senão pega a mais recente
+          // Prioriza graduações ativas (status = 'ativa'), senão pega a mais recente
           if (g.status === 'ativa' && currentGrad.status !== 'ativa') {
             latestGradByUser.set(g.aluno_id, g);
           } else if (g.status === currentGrad.status && new Date(g.data_graduacao) > new Date(currentGrad.data_graduacao)) {
