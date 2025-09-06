@@ -52,7 +52,15 @@ export interface Student {
   grau: number | null;
   alunos?: {
     faixa: string;
+    grau: number;
     data_inicio: string;
+    faixa_id?: number;
+    faixas?: {
+      nome: string;
+      ordem: number;
+      graus: number;
+      cor_base: string;
+    };
   };
   matriculas?: {
     numero: number;
@@ -62,39 +70,52 @@ export interface Student {
 }
 
 function resolveUserBelt(u: any, latestGradByUser: Map<string, any>) {
-  let beltKey: string | null = null;
+  let beltName: string | null = null;
   let grau: number | null = null;
+  let color: string | null = null;
 
-  // 1) direto do usuário
-  if (u.graduacao_atual || u.faixa_atual) {
-    beltKey = (u.graduacao_atual || u.faixa_atual).toString().toLowerCase();
+  // 1) Primeiro, tentar usar dados da tabela faixas (mais confiável)
+  if (u.alunos?.faixas?.nome) {
+    beltName = u.alunos.faixas.nome;
+    grau = u.alunos?.grau || 0;
+    color = u.alunos.faixas.cor_base || '#ffffff';
   }
-
-  // 2) última graduação da tabela graduacoes
-  if (!beltKey && latestGradByUser.size > 0) {
+  // 2) Se não tiver faixa relacionada, usar faixa texto da tabela alunos
+  else if (u.alunos?.faixa) {
+    beltName = u.alunos.faixa;
+    grau = u.alunos?.grau || 0;
+    color = BELT_COLOR[beltName.toLowerCase()] || '#ffffff';
+  }
+  // 3) última graduação da tabela graduacoes
+  else if (latestGradByUser.size > 0) {
     const g = latestGradByUser.get(u.id);
     if (g) {
-      beltKey = g.faixa?.toString().toLowerCase() || null;
+      beltName = g.faixa?.toString() || null;
       grau = g.grau ?? null;
+      color = BELT_COLOR[beltName?.toLowerCase()] || '#ffffff';
     }
   }
-
-  // 3) tabela alunos fallback
-  if (!beltKey && u.alunos?.faixa) {
-    beltKey = u.alunos.faixa.toString().toLowerCase();
+  // 4) direto do usuário (fallback)
+  else if (u.graduacao_atual || u.faixa_atual) {
+    beltName = (u.graduacao_atual || u.faixa_atual).toString();
+    color = BELT_COLOR[beltName.toLowerCase()] || '#ffffff';
   }
 
   // fallback final
-  if (!beltKey || !BELT_ORDER.includes(beltKey as any)) {
-    beltKey = 'branca';
+  if (!beltName) {
+    beltName = 'Branca';
     grau = grau || 0;
+    color = '#ffffff';
   }
 
+  // Formatação do label
+  const label = grau && grau > 0 ? `${beltName} • ${grau}º grau` : beltName;
+
   return {
-    beltKey,
+    beltKey: beltName.toLowerCase(),
     grau: grau || 0,
-    label: BELT_LABEL[beltKey] + (grau && grau > 0 ? ` • ${grau}º grau` : ''),
-    color: BELT_COLOR[beltKey],
+    label,
+    color: color || '#ffffff',
   };
 }
 
@@ -108,7 +129,15 @@ export const useStudents = (searchTerm?: string, statusFilter?: string) => {
           *,
           alunos (
             faixa,
-            data_inicio
+            grau,
+            data_inicio,
+            faixa_id,
+            faixas (
+              nome,
+              ordem,
+              graus,
+              cor_base
+            )
           ),
           matriculas (
             numero,
