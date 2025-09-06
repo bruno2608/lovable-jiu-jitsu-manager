@@ -38,9 +38,12 @@ const MarcarPresenca = () => {
     if (alunos.length > 0) {
       const initialPresencas = alunos.map((aluno) => {
         const existente = presencasExistentes?.find(p => p.aluno_id === aluno.id);
+        const status = existente?.status;
+        const validStatus = status === "presente" || status === "ausente" || status === "justificado" ? status : "";
+        
         return {
           aluno_id: aluno.id,
-          status: (existente?.status as "" | "presente" | "ausente" | "justificado") || "",
+          status: validStatus as PresencaForm["status"],
           observacao: existente?.observacao || "",
           checked: !!existente,
         };
