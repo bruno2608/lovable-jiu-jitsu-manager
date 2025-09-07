@@ -1,16 +1,23 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Check, Upload, Save } from "lucide-react";
+import { 
+  Check, Upload, Save, Search, Filter, UserCheck, UserX, 
+  AlertCircle, RotateCcw, CheckCircle2, Clock, Users2,
+  Zap, Camera, FileText
+} from "lucide-react";
 import AppLayout from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import { usePresencas, useAlunosTurma, useSavePresencas, useImportExcel } from "@/hooks/usePresencas";
 
@@ -27,6 +34,9 @@ const MarcarPresenca = () => {
   
   const [presencas, setPresencas] = useState<PresencaForm[]>([]);
   const [file, setFile] = useState<File | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [showQuickActions, setShowQuickActions] = useState(true);
 
   const { data: alunos = [], isLoading: alunosLoading } = useAlunosTurma(aulaInstanciaId || "");
   const { data: presencasExistentes } = usePresencas(aulaInstanciaId || "");
@@ -129,6 +139,62 @@ const MarcarPresenca = () => {
     }
   };
 
+  // Quick Actions
+  const markAllPresent = () => {
+    setPresencas(prev => prev.map(p => ({
+      ...p,
+      status: "presente" as PresencaForm["status"],
+      checked: true,
+      observacao: ""
+    })));
+    toast.success("Todos os alunos marcados como presentes");
+  };
+
+  const markAllAbsent = () => {
+    setPresencas(prev => prev.map(p => ({
+      ...p,
+      status: "ausente" as PresencaForm["status"],
+      checked: true,
+      observacao: ""
+    })));
+    toast.success("Todos os alunos marcados como ausentes");
+  };
+
+  const clearAll = () => {
+    setPresencas(prev => prev.map(p => ({
+      ...p,
+      status: "" as PresencaForm["status"],
+      checked: false,
+      observacao: ""
+    })));
+    toast.success("Todas as marcações removidas");
+  };
+
+  // Filter students
+  const filteredAlunos = alunos.filter((aluno, index) => {
+    const presenca = presencas[index];
+    const matchesSearch = aluno.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         aluno.email.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesStatus = statusFilter === "all" || 
+                         (statusFilter === "checked" && presenca?.checked) ||
+                         (statusFilter === "unchecked" && !presenca?.checked) ||
+                         (statusFilter === "presente" && presenca?.status === "presente") ||
+                         (statusFilter === "ausente" && presenca?.status === "ausente") ||
+                         (statusFilter === "justificado" && presenca?.status === "justificado");
+    
+    return matchesSearch && matchesStatus;
+  });
+
+  // Statistics
+  const stats = {
+    total: presencas.length,
+    checked: presencas.filter(p => p.checked).length,
+    presente: presencas.filter(p => p.status === "presente").length,
+    ausente: presencas.filter(p => p.status === "ausente").length,
+    justificado: presencas.filter(p => p.status === "justificado").length,
+  };
+
   if (!aulaInstanciaId) {
     return (
       <AppLayout>
@@ -143,7 +209,8 @@ const MarcarPresenca = () => {
   return (
     <AppLayout>
       <div className="space-y-6">
-        <div className="flex justify-between items-center">
+        {/* Header with Stats */}
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Marcar Presença</h1>
             <p className="text-muted-foreground">
@@ -151,17 +218,125 @@ const MarcarPresenca = () => {
             </p>
           </div>
           
-          <div className="flex gap-2">
-            <Button
-              onClick={handleSavePresencas}
-              disabled={savePresencasMutation.isPending || presencas.filter(p => p.checked).length === 0}
-              className="gap-2"
-            >
-              <Save className="h-4 w-4" />
-              Salvar Presenças
-            </Button>
+          {/* Quick Stats */}
+          <div className="flex gap-2 flex-wrap">
+            <Badge variant="outline" className="gap-1">
+              <Users2 className="h-3 w-3" />
+              {stats.total} alunos
+            </Badge>
+            <Badge variant="outline" className="gap-1 text-green-600 border-green-200">
+              <UserCheck className="h-3 w-3" />
+              {stats.presente} presentes
+            </Badge>
+            <Badge variant="outline" className="gap-1 text-red-600 border-red-200">
+              <UserX className="h-3 w-3" />
+              {stats.ausente} ausentes
+            </Badge>
+            {stats.justificado > 0 && (
+              <Badge variant="outline" className="gap-1 text-yellow-600 border-yellow-200">
+                <AlertCircle className="h-3 w-3" />
+                {stats.justificado} justificados
+              </Badge>
+            )}
           </div>
         </div>
+
+        {/* Search and Filters */}
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex flex-col lg:flex-row gap-4">
+              <div className="flex-1">
+                <div className="relative">
+                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar por nome ou email..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-8"
+                  />
+                </div>
+              </div>
+              
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Filtrar por status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="checked">Marcados</SelectItem>
+                  <SelectItem value="unchecked">Não Marcados</SelectItem>
+                  <Separator />
+                  <SelectItem value="presente">Presentes</SelectItem>
+                  <SelectItem value="ausente">Ausentes</SelectItem>
+                  <SelectItem value="justificado">Justificados</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Button
+                onClick={handleSavePresencas}
+                disabled={savePresencasMutation.isPending || stats.checked === 0}
+                className="gap-2"
+              >
+                <Save className="h-4 w-4" />
+                Salvar ({stats.checked})
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Quick Actions */}
+        {showQuickActions && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <Zap className="h-5 w-5" />
+                  Ações Rápidas
+                </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowQuickActions(false)}
+                >
+                  ×
+                </Button>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={markAllPresent}
+                  className="gap-2"
+                >
+                  <CheckCircle2 className="h-4 w-4 text-green-600" />
+                  Marcar Todos Presentes
+                </Button>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={markAllAbsent}
+                  className="gap-2"
+                >
+                  <UserX className="h-4 w-4 text-red-600" />
+                  Marcar Todos Ausentes
+                </Button>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={clearAll}
+                  className="gap-2"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                  Limpar Tudo
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Import Excel Section */}
         <Card>
@@ -210,7 +385,12 @@ const MarcarPresenca = () => {
         {/* Students List */}
         <Card>
           <CardHeader>
-            <CardTitle>Lista de Alunos</CardTitle>
+            <CardTitle className="flex items-center justify-between">
+              Lista de Alunos
+              <span className="text-sm font-normal text-muted-foreground">
+                {filteredAlunos.length} de {alunos.length} alunos
+              </span>
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <ScrollArea className="h-[600px]">
@@ -219,6 +399,7 @@ const MarcarPresenca = () => {
                   {[...Array(5)].map((_, i) => (
                     <div key={i} className="flex items-center gap-4 p-4 border rounded-lg">
                       <Skeleton className="h-4 w-4" />
+                      <Skeleton className="h-10 w-10 rounded-full" />
                       <div className="flex-1 space-y-2">
                         <Skeleton className="h-4 w-48" />
                         <Skeleton className="h-3 w-32" />
@@ -229,26 +410,51 @@ const MarcarPresenca = () => {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {alunos.map((aluno, index) => {
-                    const presenca = presencas[index];
+                  {filteredAlunos.map((aluno, filteredIndex) => {
+                    // Find the original index in the full alunos array
+                    const originalIndex = alunos.findIndex(a => a.id === aluno.id);
+                    const presenca = presencas[originalIndex];
                     if (!presenca) return null;
 
                     return (
-                      <div key={aluno.id} className="flex items-start gap-4 p-4 border rounded-lg">
+                      <div key={aluno.id} className="flex items-start gap-4 p-4 border rounded-lg hover:shadow-sm transition-shadow">
                         <Checkbox
                           checked={presenca.checked}
                           onCheckedChange={(checked) => 
-                            handlePresencaChange(index, "checked", checked)
+                            handlePresencaChange(originalIndex, "checked", checked)
                           }
                         />
                         
+                        {/* Avatar */}
+                        <Avatar className="h-10 w-10 border">
+                          <AvatarImage src={aluno.foto_url} alt={aluno.nome} />
+                          <AvatarFallback>
+                            {aluno.nome.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        
                         <div className="flex-1 space-y-2">
                           <div>
-                            <h3 className="font-medium">{aluno.nome}</h3>
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-medium">{aluno.nome}</h3>
+                              {presenca.status && (
+                                <Badge 
+                                  variant={
+                                    presenca.status === "presente" ? "default" :
+                                    presenca.status === "ausente" ? "destructive" : "secondary"
+                                  }
+                                  className="text-xs"
+                                >
+                                  {presenca.status === "presente" ? "Presente" :
+                                   presenca.status === "ausente" ? "Ausente" : "Justificado"}
+                                </Badge>
+                              )}
+                            </div>
                             <p className="text-sm text-muted-foreground">{aluno.email}</p>
                             {aluno.faixa_label && (
                               <Badge 
                                 variant="outline" 
+                                className="text-xs"
                                 style={{ 
                                   borderColor: aluno.faixa_color,
                                   color: aluno.faixa_color 
@@ -260,22 +466,37 @@ const MarcarPresenca = () => {
                           </div>
                           
                           {presenca.checked && (
-                            <div className="space-y-3">
+                            <div className="space-y-3 pt-2">
                               <div>
                                 <Label className="text-sm">Status</Label>
                                 <Select
                                   value={presenca.status}
                                   onValueChange={(value) => 
-                                    handlePresencaChange(index, "status", value)
+                                    handlePresencaChange(originalIndex, "status", value)
                                   }
                                 >
                                   <SelectTrigger className="w-full">
                                     <SelectValue placeholder="Selecione o status" />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    <SelectItem value="presente">Presente</SelectItem>
-                                    <SelectItem value="ausente">Ausente</SelectItem>
-                                    <SelectItem value="justificado">Justificado</SelectItem>
+                                    <SelectItem value="presente">
+                                      <div className="flex items-center gap-2">
+                                        <UserCheck className="h-4 w-4 text-green-600" />
+                                        Presente
+                                      </div>
+                                    </SelectItem>
+                                    <SelectItem value="ausente">
+                                      <div className="flex items-center gap-2">
+                                        <UserX className="h-4 w-4 text-red-600" />
+                                        Ausente
+                                      </div>
+                                    </SelectItem>
+                                    <SelectItem value="justificado">
+                                      <div className="flex items-center gap-2">
+                                        <AlertCircle className="h-4 w-4 text-yellow-600" />
+                                        Justificado
+                                      </div>
+                                    </SelectItem>
                                   </SelectContent>
                                 </Select>
                               </div>
@@ -287,7 +508,7 @@ const MarcarPresenca = () => {
                                     placeholder="Motivo da justificativa..."
                                     value={presenca.observacao}
                                     onChange={(e) => 
-                                      handlePresencaChange(index, "observacao", e.target.value)
+                                      handlePresencaChange(originalIndex, "observacao", e.target.value)
                                     }
                                     className="mt-1"
                                     rows={2}
@@ -297,9 +518,45 @@ const MarcarPresenca = () => {
                             </div>
                           )}
                         </div>
+
+                        {/* Quick Status Buttons */}
+                        {!presenca.checked && (
+                          <div className="flex gap-1">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                handlePresencaChange(originalIndex, "status", "presente");
+                                handlePresencaChange(originalIndex, "checked", true);
+                              }}
+                              className="gap-1 text-green-600 border-green-200 hover:bg-green-50"
+                            >
+                              <UserCheck className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                handlePresencaChange(originalIndex, "status", "ausente");
+                                handlePresencaChange(originalIndex, "checked", true);
+                              }}
+                              className="gap-1 text-red-600 border-red-200 hover:bg-red-50"
+                            >
+                              <UserX className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     );
                   })}
+                </div>
+              )}
+              
+              {!alunosLoading && filteredAlunos.length === 0 && searchTerm && (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">
+                    Nenhum aluno encontrado para "{searchTerm}".
+                  </p>
                 </div>
               )}
               

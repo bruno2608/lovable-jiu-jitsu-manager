@@ -10,7 +10,8 @@ import {
   Mail,
   Building,
   Tag,
-  FileText
+  FileText,
+  CheckSquare
 } from "lucide-react";
 
 import {
@@ -45,6 +46,11 @@ const mainMenuItems = [
     title: "Aulas",
     url: "/aulas",
     icon: CalendarDays,
+  },
+  {
+    title: "Presença",
+    url: "/presenca",
+    icon: CheckSquare,
   },
   {
     title: "Graduações",
